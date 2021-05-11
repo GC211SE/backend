@@ -1,0 +1,29 @@
+@startuml erd
+
+subject_nm_kor
+let_room
+week_nm
+in_num
+prof_nm
+isu_cd
+rowid
+lec_time
+grade
+subject_cd
+etc_view
+credit
+
+과목명
+강의실
+주차명
+정원
+담당교수
+이수
+idx
+강의 시간
+학년
+학수번호
+비고
+학점
+
+@enduml
