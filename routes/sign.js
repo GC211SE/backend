@@ -6,6 +6,7 @@ var path = require("path");
 var axios = require("axios")
 
 
+
 // Refered by https://gist.github.com/DokySp/7115187703fe5cb3e5bc629ee81cb5da
 router.get('/', async (req, res, next) => {
 
@@ -44,7 +45,6 @@ router.get('/', async (req, res, next) => {
     "dept": dept,
     "photo": photoUrl
   })
-
   return
 });
 
