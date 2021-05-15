@@ -7,6 +7,8 @@ var axios = require("axios")
 
 
 
+// GET: /api/sign
+//  - query: {id: "아이디", pw="패스워드"}
 // Refered by https://gist.github.com/DokySp/7115187703fe5cb3e5bc629ee81cb5da
 router.get('/', async (req, res, next) => {
 

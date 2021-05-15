@@ -2,38 +2,100 @@ var express = require('express');
 var router = express.Router();
 var path = require("path");
 
-// For crawling target site
-var axios = require("axios")
-var cheerio = require("cheerio")
-// https://velog.io/@yesdoing/Node.js-에서-웹-크롤링하기-wtjugync1m
-
-const year = `2021`
-const semester = `10` // 10, 11, 20, 21
-const campus = `21` // "": all, 20: Global, 21: Medical
-const link = `http://sg.gachon.ac.kr/main?attribute=timeTableJson&lang=ko&year=${year}&hakgi=${semester}&menu=1&p_group_cd=${campus}&p_isu_cd=3&p_gwamok_nm=%25%25&initYn=Y&_search=false&rows=-1&page=1&sord=asc`
 
 
+var connSync = (query) => new Promise(resolve => {
+  conn.query(query, (err,rows) => {
+    if(err){
+      // console.log(err)
+      resolve(false)
+    } else
+      resolve(rows)
+  })
+})
 
-/* GET home page. */
-router.get('/test', async (req, res, next) => {
 
-  console.log("=======================================")
 
-  resHtml = await getHtml(link)
-  // console.log(resHtml.data)
-  // const $ = cheerio.load(resHtml.data)
-  var dataS = JSON.stringify(resHtml.data)
-  var data = JSON.parse(dataS)
-  data = data.rows
-  console.log(data[0])
-  console.log(data[1])
-  console.log(data[2])
-  console.log(data.length)
+// GET: /api/schedule/buildings
+//  - query: {}
+router.get('/buildings', async (req, res, next) => {
+  // Response all buildings
+  var rows = await connSync(`select distinct(building) as name from lec_room;`)
+  var result = [];
+  for(var item of rows){
+    if(item.name == '') continue;
+    result.push(item.name)
+  }
+  
+  res.json({result: result})
+})
 
-  res.sendFile(path.join(__dirname, "../public/index.html"))
+
+
+// GET: /api/schedule/classrooms
+//  - query: {bd: "건물이름 ex> IT대학"}
+router.get('/classrooms', async (req, res, next) => {
+  // 모든 강의실 번호 response
+  // param
+  // bd = 빌딩이름
+
+  if(!Object.keys(req.query).includes("bd")){
+    error(res, "query error")
+    return
+  }
+
+  var rows = await connSync(`select classroom as name from lec_room where building="${req.query.bd}";`)
+  var result = [];
+  for(var item of rows){
+    if(item.name == '') continue;
+    result.push(item.name)
+  }
+
+  res.json({result: result})
+})
+
+
+
+// GET: /api/schedule
+//  - query: {bd: "건물이름 ex> IT대학", crn="강의실 번호 ex> 304"}
+router.get('/', async (req, res, next) => {
+  // param
+  // bd = 빌딩이름
+  // crn = 강의실 번호
+
+  if(!Object.keys(req.query).includes("bd") || !Object.keys(req.query).includes("crn")){
+    error(res, "query error")
+    return
+  }
+
+  var sqlQuery = `
+    select g4.lecname, g4.profname, lec_time.name, lec_time.dotw, lec_time.start, lec_time.end from (
+        select g3.idx, g3.lecname, g3.profname, lec_time_idx from (
+            select idx, lecname, profname from (
+                select lecture_idx from (select idx, building, classroom from lec_room) g1 
+                    join lec_room_link on lec_room_link.lec_room_idx = g1.idx where g1.building="${req.query.bd}" and g1.classroom="${req.query.crn}"
+            ) g2 join lecture on g2.lecture_idx=lecture.idx
+        ) g3 join lec_time_link on g3.idx=lec_time_link.lecture_idx
+    ) g4 join lec_time on g4.lec_time_idx=lec_time.idx;
+  `
+  var rows = await connSync(sqlQuery)
+  
+  res.json({result: rows})
 });
 
 
+
+
+
+var connSync = (query) => new Promise(resolve => {
+  conn.query(query, (err,rows) => {
+    if(err){
+      // console.log(err)
+      resolve(false)
+    } else
+      resolve(rows)
+  })
+})
 
 var error = (res, msg) => {
   res.statusCode = 400;
