@@ -1,5 +1,7 @@
 
 cipher.js
+fbconfig
+keystore/gcse211*
 
 # Created by https://www.toptal.com/developers/gitignore/api/node,macos,windows,linux
 # Edit at https://www.toptal.com/developers/gitignore?templates=node,macos,windows,linux
