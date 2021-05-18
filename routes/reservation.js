@@ -332,6 +332,20 @@ router.patch("/checkout", async (req, res, next) => {
 
 
 
+// 예약 연장 기능 구현 X
+
+// Test API for viewing MySQL table
+router.get('/showtable', async (req, res, next) => {
+
+  var result = await connSync(`select * from reservation`)
+  if(!result) {
+    error(res, "sql error")
+    return
+  }
+
+  res.json(result);
+});
+
 // Test API for testing Firebase Cloud Messaging
 router.post('/pushtest', function(req, res, next) {
 
@@ -345,14 +359,6 @@ router.post('/pushtest', function(req, res, next) {
     success: true
   });
 });
-
-
-
-// 예약 연장 기능 구현 X
-
-
-
-
 
 // Initialize FB
 var serviceAccount = require("../keystore/gcse211-firebase-adminsdk.json");

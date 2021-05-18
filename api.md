@@ -130,6 +130,17 @@
    - `bd`: (mandatory) building name
    - `crn`: (mandatory) classroom name
    - `fb_key`: (mandatory) Firebase API Key
+ - body example:
+    ```json
+    {
+        "userid": "uhug",
+        "start": "2021-05-10 10:00:00",
+        "end": "2021-05-10 11:00:00",
+        "bd": "IT대학",
+        "crn": "304",
+        "fb_key": "example-APd23ckDF",
+    }
+    ```
  - response [True]
     ```json
     {
@@ -152,6 +163,13 @@
  - body
    - `userid`: (mandatory) user id
    - `idx`: (mandatory) reservation idx for activation
+ - body example:
+    ```json
+    {
+        "userid": "uhug",
+        "idx": 3
+    }
+    ```
  - response [True]
     ```json
     {
@@ -172,6 +190,12 @@
  - example: `https://gcse.doky.space/api/reservation/checkout`
  - body
    - `userid`: (mandatory) user id
+ - body example:
+    ```json
+    {
+        "userid": "uhug"
+    }
+    ```
  - response [True]
     ```json
     {
