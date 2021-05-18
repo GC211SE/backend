@@ -6,7 +6,7 @@
  - Verify user data
  - parameter
    - `id`: (mandatory) user id to get data
-   - `id`: (mandatory) user id to get data
+   - `pw`: (mandatory) user password to get data
  - example: `https://gcse.doky.space/api/sign?id=gdhong&pw=11111`
  - response [Success]
     ```json
@@ -28,7 +28,7 @@
 
 <br><br><br>
 
-## DATA
+## SCHEDULE
 
 **GET: `/api/schedule/buildings`**
  - Give all building names
@@ -81,7 +81,7 @@
    - `crn`: (mandatory) classroom name
  - example: `https://gcse.doky.space/api/schedule?bd=IT대학&crn=304`
  - description
-   - "name": 1: 9:00~9:50, 2: 10:00~10:50, ... 21: 9:30~10:45, ...
+   - "name": 1: 9:00\~9:50, 2: 10:00\~10:50, ... 21: 9:30\~10:45, ...
    - "dotw": Date of the week -> 1: Monday, 2: Tuesday, ... 6: Saturday
  - response
     ```json
@@ -115,3 +115,206 @@
         ]
     }
     ```
+
+<br><br><br>
+
+## RESERVATION
+
+**POST: `/api/reservation`**
+ - Give all building names
+ - example: `https://gcse.doky.space/api/reservation`
+ - body
+   - `userid`: (mandatory) user id
+   - `start`: (mandatory) `DateTime.now()`
+   - `end`: (mandatory) `DateTime.now()`
+   - `bd`: (mandatory) building name
+   - `crn`: (mandatory) classroom name
+   - `fb_key`: (mandatory) Firebase API Key
+ - response [True]
+    ```json
+    {
+        "success": true,
+        "idx": 23
+    }
+    ```
+ - response [False]
+    ```json
+    {
+        "success": false,
+        "msg": "sql error" or "query error"
+    }
+    ```
+<br>
+
+**PATCH: `/api/reservation/checkin`**
+ - Check in specific reservation
+ - example: `https://gcse.doky.space/api/reservation/checkin`
+ - body
+   - `userid`: (mandatory) user id
+   - `idx`: (mandatory) reservation idx for activation
+ - response [True]
+    ```json
+    {
+        "success": true
+    }
+    ```
+ - response [False]
+    ```json
+    {
+        "success": false,
+        "msg": "have another activated reservation"
+    }
+    ```
+<br>
+
+**PATCH: `/api/reservation/checkout`**
+ - Checkout all current reservations
+ - example: `https://gcse.doky.space/api/reservation/checkout`
+ - body
+   - `userid`: (mandatory) user id
+ - response [True]
+    ```json
+    {
+        "success": true
+    }
+    ```
+ - response [False]
+    ```json
+    {
+        "success": false,
+        "msg": "sql error" or "query error"
+    }
+    ```
+<br>
+
+**GET: `/api/reservation/all?bd=&crn=`**
+ - Give all reservation of specific classroom
+ - example: `https://gcse.doky.space/api/reservation/all?bd=IT대학&crn=304`
+ - query
+   - `bd`: (mandatory) building name
+   - `crn`: (mandatory) classroom name
+ - response [True]
+    ```json
+    {
+        "success": [
+            {
+                "userid": "d",
+                "start": "2021-05-18T12:53:46.000Z",
+                "end": "2021-05-18T12:54:06.000Z",
+                "enable": 0  // 0: reserve, 1: using, 2: used or canceled
+            },
+            {
+                "userid": "d",
+                "start": "2021-05-18T12:53:46.000Z",
+                "end": "2021-05-18T12:54:06.000Z",
+                "enable": 1
+            },
+            {
+                "userid": "d",
+                "start": "2021-05-18T12:53:46.000Z",
+                "end": "2021-05-18T12:54:06.000Z",
+                "enable": 0
+            },
+            ...
+        ]
+    }
+    ```
+ - response [Empty]
+    ```json
+    {
+        "success": []
+    }
+    ```
+<br>
+
+**GET: `/api/reservation/currtotal?bd=&crn=`**
+ - Give specific classrooms status
+ - example: `https://gcse.doky.space/api/reservation/currtotal?bd=IT대학&crn=304`
+ - query
+   - `bd`: (mandatory) building name
+   - `crn`: (mandatory) classroom name
+ - response
+    ```json
+    {
+        "success": {
+            "reserved": 1, // How many people reserve this room
+            "using": 0     // How many people using this room
+        }
+    }
+    ```
+
+<br>
+
+**GET: `/api/reservation/personal?userid=`**
+ - Give all of reservation data of user
+ - example: `https://gcse.doky.space/api/reservation/personal?userid=uhug`
+ - query
+   - `userid`: (mandatory) user id
+ - response [True]
+    ```json
+    {
+        "success": [
+            {
+                "idx": 2,
+                "userid": "uhug",
+                "start": "2021-05-18T12:42:38.000Z",
+                "end": "2021-05-18T12:42:38.000Z",
+                "building": "IT대학",
+                "classroom": "304",
+                "enable": 2
+            },
+            {
+                "idx": 16,
+                "userid": "uhug",
+                "start": "2021-05-19T16:53:46.000Z",
+                "end": "2021-05-19T18:54:06.000Z",
+                "building": "IT대학",
+                "classroom": "304",
+                "enable": 0
+            },
+            {
+                "idx": 17,
+                "userid": "uhug",
+                "start": "2021-05-19T12:53:46.000Z",
+                "end": "2021-05-19T18:54:06.000Z",
+                "building": "IT대학",
+                "classroom": "304",
+                "enable": 0
+            },
+            ...
+        ]
+    }
+    ```
+ - response [Empty]
+    ```json
+    {
+        "success": []
+    }
+    ```
+<br>
+
+**GET: `/api/reservation/current?userid=`**
+ - Give current reservation information of user
+ - example: `https://gcse.doky.space/api/reservation/current?userid=uhug`
+ - query
+   - `userid`: (mandatory) user id
+ - response
+    ```json
+    {
+        "success": {
+            "userid": "uhug",
+            "start": "2021-05-18T12:53:46.000Z",
+            "end": "2021-05-18T12:54:06.000Z",
+            "building": "IT대학",
+            "classroom": "304",
+            "enable": 1
+        }
+    }
+    ```
+ - response [Empty]
+    ```json
+    {
+        "success": {}
+    }
+    ```
+<br>

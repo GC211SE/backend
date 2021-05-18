@@ -46,8 +46,9 @@ router.post("/", async (req, res, next) => {
   if(!Object.keys(req.body).includes("userid") || 
     !Object.keys(req.body).includes("start") || 
       !Object.keys(req.body).includes("end") || 
-        !Object.keys(req.body).includes("lec_room_idx") || 
-          !Object.keys(req.body).includes("fb_key")) {
+        !Object.keys(req.body).includes("bd") || 
+          !Object.keys(req.body).includes("crn") || 
+            !Object.keys(req.body).includes("fb_key")) {
     error(res, "query error")
     return
   }
@@ -72,11 +73,17 @@ router.post("/", async (req, res, next) => {
   }
   var endTime = req.body.end
 
-  if(isNaN(req.body.lec_room_idx)){
-    error(res, "query error: lec_room_idx")
+  if(req.body.bd.length == 0){
+    error(res, "query error: bd")
     return
   }
-  var lecroomIdx = Number(req.body.lec_room_idx)
+  var building = req.body.bd
+
+  if(req.body.crn.length == 0){
+    error(res, "query error: crn")
+    return
+  }
+  var classroom = req.body.crn
 
   if(req.body.fb_key == 0){
     error(res, "query error: fb_key")
@@ -84,8 +91,16 @@ router.post("/", async (req, res, next) => {
   }
   var firebaseKey = req.body.fb_key
 
-  var result = await connSync(`insert into reservation(userid, start, end, lec_room_idx, enable, fb_key) 
-    value("${userid}", "${startTime}", "${endTime}", ${lecroomIdx}, 0, "${firebaseKey}")`)
+  var result = await connSync(getQuery(building, classroom))
+  if(!result || result.length == 0){
+    error(res, "sql error")
+    return
+  }
+
+  var roomIdx = result[0].roomidx
+
+  result = await connSync(`insert into reservation(userid, start, end, lec_room_idx, enable, fb_key) 
+    value("${userid}", "${startTime}", "${endTime}", ${roomIdx}, 0, "${firebaseKey}")`)
 
   console.log(result.insertId)
 
@@ -238,7 +253,7 @@ router.get("/personal", async (req, res, next) => {
   }
   var userid = req.query.userid
 
-  var result = await connSync(`select userid, start, end, building, classroom, enable from 
+  var result = await connSync(`select reservation.idx, userid, start, end, building, classroom, enable from 
     (select * from lec_room) g1 join reservation on g1.idx = lec_room_idx where userid="${userid}"`)
   if(!result) {
     error(res, "sql error")
@@ -277,31 +292,34 @@ router.get("/current", async (req, res, next) => {
     return
   }
 
-  res.json({success: result[0]})
+  if(result.length == 1)
+    res.json({success: result[0]})
+  else 
+    res.json({success: {}})
 })
 
 
+// checkout
 router.patch("/checkout", async (req, res, next) => {
-  // checkout
   // uid = 사용자 아이디
   // ~~idx = 현재 예약 인덱스~~ => enable 1인 것을 전부 2로 변경
 
-  // if(!Object.keys(req.query).includes("idx") || !Object.keys(req.query).includes("userid")){
-  if(!Object.keys(req.query).includes("userid")){
+  // if(!Object.keys(req.body).includes("idx") || !Object.keys(req.body).includes("userid")){
+  if(!Object.keys(req.body).includes("userid")){
     error(res, "query error")
     return
   }
-  // if(isNaN(req.query.idx)){
+  // if(isNaN(req.body.idx)){
   //   error(res, "query error: idx")
   //   return
   // }
-  // var idx = Number(req.query.idx)
+  // var idx = Number(req.body.idx)
 
-  if(req.query.userid.length == 0){
+  if(req.body.userid.length == 0){
     error(res, "query error: userid")
     return
   }
-  var userid = req.query.userid
+  var userid = req.body.userid
 
   var result = await connSync(`update reservation set enable=2 where userid="${userid}" and enable=1`)
   if(!result) {
