@@ -3,6 +3,8 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+var cors = require('cors')
+
 var mysql = require('mysql')
 const cipher = require('./cipher');
 const getTimetable = require('./getTimetable');
@@ -36,6 +38,8 @@ conn.connect((err) => {
 // console.log("Start at: " + updateTime)
 
 var app = express();
+
+app.use(cors())
 
 app.use(logger('dev'));
 app.use(express.json());
