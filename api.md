@@ -342,3 +342,23 @@
     }
     ```
 <br>
+
+
+
+**GET: `/api/reservation/targettotal`**
+ - .
+ - query
+ - response
+    ```json
+
+    ```
+<br>
+
+**GET: `/api/reservation/cancel`**
+ - .
+ - query
+ - response
+    ```json
+
+    ```
+<br>
