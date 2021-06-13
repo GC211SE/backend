@@ -1,29 +1,70 @@
-@startuml erd
+@startuml er-diagram
 
-subject_nm_kor
-let_room
-week_nm
-in_num
-prof_nm
-isu_cd
-rowid
-lec_time
-grade
-subject_cd
-etc_view
-credit
+' https://raw.githubusercontent.com/GC211MP/API/main/documents/erd.puml
 
-과목명
-강의실
-주차명
-정원
-담당교수
-이수
-idx
-강의 시간
-학년
-학수번호
-비고
-학점
+left to right direction
+
+title
+
+=[Server] Entity Relationship Diagram
+
+end title
+
+map lecture {
+    <color:red>**(PK)**</color> idx => int
+    lecname => varchar
+    lecnum => varchar
+    profname => varchar
+}
+
+map lec_time {
+    <color:red>**(PK)**</color> idx => int
+    name => int
+    dotw => int
+    start => timestamp
+    end => timestamp
+}
+
+map lec_room {
+    <color:red>**(PK)**</color> idx => int
+    building => varchar
+    classroom => varchar
+}
+
+map lec_time_link {
+    <color:blue>**(FK)**</color> lecture_idx => int
+    <color:blue>**(FK)**</color> lec_time_idx => int
+}
+
+map lec_room_link {
+    <color:blue>**(FK)**</color> lecture_idx => int
+    <color:blue>**(FK)**</color> lec_room_idx => int
+}
+
+map reservation {
+    <color:red>**(PK)**</color> idx => int
+    userid => varchar
+    start => timestamp
+    end => timestamp
+    <color:blue>**(FK)**</color> lec_room_idx => int
+    enable => int
+    fb_key => varchar
+}
+
+
+' lec_time
+' lecture
+' lec_room
+' lec_time_link
+' lec_room_link
+' reservation
+
+lec_time_link }o.down.|| lecture
+lec_time_link }o.down.|| lec_time
+
+lec_room_link }o.up.|| lecture
+lec_room_link }o.up.|| lec_room
+
+reservation }o..|| lec_room
 
 @enduml
