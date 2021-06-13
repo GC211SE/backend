@@ -343,22 +343,38 @@
     ```
 <br>
 
-
-
 **GET: `/api/reservation/targettotal`**
- - .
+ - Get reservation: Number of reserved and using status reservations in certain time
  - query
+   - `bd`: (mandatory) building name
+   - `crn`: (mandatory) classroom name
+   - `time`: (mandatory) certain time
  - response
     ```json
-
+    {
+        "success": {
+            "reserved": 0
+        }
+    }
     ```
 <br>
 
-**GET: `/api/reservation/cancel`**
- - .
- - query
- - response
+**PATCH: `/api/reservation/cancel`**
+ - Cancel reservation
+ - body
+   - `userid`: (mandatory) user id
+   - `idx`: (mandatory) Reservation index
+ - response [True]
     ```json
-
+    {
+        "success": true
+    }
+    ```
+ - response [False]
+    ```json
+    {
+        "success": false,
+        "msg": "sql error" or "query error"
+    }
     ```
 <br>
