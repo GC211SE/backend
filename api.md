@@ -343,7 +343,7 @@
     ```
 <br>
 
-**GET: `/api/reservation/targettotal`**
+**GET: `/api/reservation/targettotal?bd=&crn=&time=`**
  - Get reservation: Number of reserved and using status reservations in certain time
  - query
    - `bd`: (mandatory) building name
