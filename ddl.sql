@@ -65,7 +65,7 @@ create table reservation(
 
 
 
--- 없음
+-- None
 insert into lec_time(name, dotw, start, end) values(0, 0, "2000-01-01 00:00:00", "2000-01-01 00:00:00");
 
 -- 1교시

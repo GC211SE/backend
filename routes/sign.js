@@ -22,6 +22,7 @@ router.get('/', async (req, res, next) => {
 
   var query = `?email=${userId}&password=${userPw}`
 
+  // Use Gachon univ.'s sign in system
   var resHtml = await getHtml("https://wind.gachon.ac.kr/ko/process/member/login" + query)
   
   if(resHtml.length == 0){
@@ -29,6 +30,7 @@ router.get('/', async (req, res, next) => {
     return
   }
 
+  // Crawl code to get user information
   var resData = resHtml.data.substring(0,10000)
 
   var name = resData.split("div class=\"info\"")[1]
@@ -52,6 +54,7 @@ router.get('/', async (req, res, next) => {
 
 
 
+// Use Gachon univ.'s sign in system
 const getHtml = async (targetLink) => {
   var res
 
@@ -76,6 +79,7 @@ const getHtml = async (targetLink) => {
 
 
 
+// Error handler
 var error = (res, msg) => {
   res.statusCode = 400;
   res.json({

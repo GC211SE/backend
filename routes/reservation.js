@@ -4,13 +4,12 @@ var path = require("path");
 var {google} = require('googleapis');
 var cron = require('node-cron');
 var admin = require("firebase-admin");
-require('dotenv').config({ path: "../fbconfig" });
-
 
 
 let testset = [];
 
 
+// Defalut query to search reservation
 var getQuery = (bd, crn) => `
   select g4.lecname, g4.profname, lec_time.name, lec_time.dotw, lec_time.start, lec_time.end, g4.roomidx from (
       select g3.idx, g3.lecname, g3.profname, lec_time_idx, g3.roomidx from (
@@ -22,6 +21,7 @@ var getQuery = (bd, crn) => `
   ) g4 join lec_time on g4.lec_time_idx=lec_time.idx;
   `
 
+// SQL query executor (Promise)
 var connSync = (query) => new Promise(resolve => {
   conn.query(query, (err,rows) => {
     if(err){
@@ -41,14 +41,14 @@ var sendFCMMsg = (msg) => {
     console.log('Successfully sent message:', response);
   })
   .catch((error) => {
-    // 사용자가 앱 삭제 시, 해당 appToken으로 메시지 발송 시 catch됨
+    // If user delete app and server send message spcified appToken -> error 
     console.log('Error sending message:', error);
   });
 }
 
 
 
-// 예약 생성 
+// Create Reservation
 // - int        / idx
 // - str        / userid
 // - timestamp  / start
@@ -69,8 +69,9 @@ router.post("/", async (req, res, next) => {
     return
   }
 
-  // uid = 사용자 아이디 (없으면 anonimus 등록)
-  //  -> 현 시간 기준 30분 자동 등록 (프론트에서 처리)
+  // uid = userid (If don't exist, enroll anonymous)
+  //  -> Automated enroll 30 minute to using time (in front-end).
+  // REST API parameter error check
   if(req.body.userid.length == 0){
     error(res, "query error: userid")
     return
@@ -121,6 +122,7 @@ router.post("/", async (req, res, next) => {
 
   var roomIdx = result[0].roomidx
 
+  // Insert to database
   result = await connSync(`insert into reservation(userid, start, end, lec_room_idx, fb_key, enable) 
     value("${userid}", "${startTime}", "${endTime}", ${roomIdx}, "${firebaseKey}", ${enable})`)
 
@@ -131,6 +133,7 @@ router.post("/", async (req, res, next) => {
     return
   }
 
+  // Return result
   res.json({
     "success": true,
     "idx": result.insertId
@@ -139,11 +142,12 @@ router.post("/", async (req, res, next) => {
 
 
 
-// 예약 확인: Check-In
+// Check-In
 router.patch("/checkin", async (req, res, next) => {
-  // 실제 예약 idx를 활성화시킴!
+  // idx activation
   // idx
   // userid
+  // REST API parameter error check
   if(!Object.keys(req.body).includes("idx") || !Object.keys(req.body).includes("userid")){
     error(res, "query error")
     return
@@ -160,19 +164,19 @@ router.patch("/checkin", async (req, res, next) => {
   }
   var userid = req.body.userid
 
-  // 이미 활성화된 예약이 있는지 확인 
+  // Check already activated reservation
   var result = await connSync(`select count(enable) as count from reservation where userid = "${userid}" and enable = 1`)
   if(!result){
     error(res, "sql error")
     return
   }
 
+  // Database processing
   console.log(result[0].count)
   if(result[0].count != 0){
     error(res, "have another activated reservation")
     return
   }
-
 
   result = await connSync(`update reservation set enable = 1 where idx = ${idx}`)
 
@@ -194,15 +198,19 @@ router.patch("/checkin", async (req, res, next) => {
     sendFCMMsg(message)
   }
 
+  // Send result
   res.json({
     "success": true,
   })
 })
 
-// 예약 가져오기: 해당 강의실의 모든 예약 및 사용중
+
+
+// Get reservations: All of nubers of reservation(status: using)
 router.get("/all", async (req, res, next) => {
-  // bd = 빌딩이름
-  // crn = 강의실 번호
+  // bd = building name
+  // crn = classroom name
+  // REST API parameter error check
   if(!Object.keys(req.query).includes("bd") || !Object.keys(req.query).includes("crn")){
     error(res, "query error")
     return
@@ -210,6 +218,7 @@ router.get("/all", async (req, res, next) => {
   var building = req.query.bd
   var classroom = req.query.crn
 
+  // Database processing
   var result = await connSync(getQuery(building, classroom))
   if(!result){
     error(res, "sql error")
@@ -224,15 +233,17 @@ router.get("/all", async (req, res, next) => {
     return
   }
 
+  // Send result
   res.json({success: result})
 })
 
 
 
-// 예약 가져오기: 현재 시간 해당 강의실 총 예약 및 사용중 수 가져오기
+// Get reservations: Number of reserved and using status reservations
 router.get("/currtotal", async (req, res, next) => {
-  // bd = 빌딩이름
-  // crn = 강의실 번호
+  // bd = building name
+  // crn = classroom name
+  // REST API parameter error check
   if(!Object.keys(req.query).includes("bd") || !Object.keys(req.query).includes("crn")){
     error(res, "query error")
     return
@@ -240,6 +251,7 @@ router.get("/currtotal", async (req, res, next) => {
   var building = req.query.bd
   var classroom = req.query.crn
 
+  // Database processing
   var result = await connSync(getQuery(building, classroom))
   if(result.length == 0){
     error(res, "sql error")
@@ -271,14 +283,16 @@ router.get("/currtotal", async (req, res, next) => {
     return
   }
   
+  // Send result
   res.json({success: {reserved: reserved, using: using}})
 })
 
-// 예약 가져오기: 지정 시간 해당 강의실 총 예약 및 사용중 수 가져오기
+// Get reservation: Number of reserved and using status reservations in certain time
 router.get("/targettotal", async (req, res, next) => {
-  // bd = 빌딩이름
-  // crn = 강의실 번호
-  // time = 지정시간
+  // bd = building name
+  // crn = classroom name
+  // time = certain time
+  // REST API parameter error check
   if(!Object.keys(req.query).includes("bd") || !Object.keys(req.query).includes("crn") || !Object.keys(req.query).includes("time")){
     error(res, "query error")
     return
@@ -287,6 +301,7 @@ router.get("/targettotal", async (req, res, next) => {
   var classroom = req.query.crn
   var targetTime = req.query.time
 
+  // Database processing
   var result = await connSync(getQuery(building, classroom))
   if(result.length == 0){
     error(res, "sql error")
@@ -305,14 +320,16 @@ router.get("/targettotal", async (req, res, next) => {
     return
   }
   
+  // Send result
   res.json({success: {reserved: reserved}})
 })
 
 
 
-// 예약 가져오기: 개인 예약 및 사용중 모두 가져오기 
+// Get reservation: All reservation of certain user
 router.get("/personal", async (req, res, next) => {
-  // uid = 사용자 아이디
+  // uid = user id
+  // REST API parameter error check
   if(!Object.keys(req.query).includes("userid")){
     error(res, "query error")
     return
@@ -323,6 +340,7 @@ router.get("/personal", async (req, res, next) => {
   }
   var userid = req.query.userid
 
+  // Database processing
   var result = await connSync(`select reservation.idx, userid, start, end, building, classroom, enable from 
     (select * from lec_room) g1 join reservation on g1.idx = lec_room_idx where userid="${userid}" order by start`)
   if(!result) {
@@ -330,14 +348,18 @@ router.get("/personal", async (req, res, next) => {
     return
   }
 
+  // Send result
   res.json({success: result})
 })
 
-// 예약 가져오기: 개인 현재 예약정보 가져오기
-router.get("/current", async (req, res, next) => {
-  // userid = 사용자 아이디
-  // ~~idx = 현재 예약 인덱스~~
 
+
+// Get reservation: Current reservation of certain user
+router.get("/current", async (req, res, next) => {
+  // userid = user id
+  // ~~idx = current reservation index~~
+
+  // REST API parameter error check
   // if(!Object.keys(req.query).includes("idx") || !Object.keys(req.query).includes("userid")){
   if(!Object.keys(req.query).includes("userid")){
     error(res, "query error")
@@ -355,6 +377,7 @@ router.get("/current", async (req, res, next) => {
   }
   var userid = req.query.userid
 
+  // Database processing
   var result = await connSync(`select reservation.idx, userid, start, end, building, classroom, enable from 
   (select * from lec_room) g1 join reservation on g1.idx = lec_room_idx where userid="${userid}" and enable=1`)
   if(!result) {
@@ -362,6 +385,7 @@ router.get("/current", async (req, res, next) => {
     return
   }
 
+  // Send result
   if(result.length == 1)
     res.json({success: result[0]})
   else 
@@ -369,11 +393,12 @@ router.get("/current", async (req, res, next) => {
 })
 
 
-// checkout
+// Checkout
 router.patch("/checkout", async (req, res, next) => {
-  // uid = 사용자 아이디
-  // ~~idx = 현재 예약 인덱스~~ => enable 1인 것을 전부 2로 변경
+  // userid = user id
+  // ~~idx = current reservation index => change enable 2 if enable was 1~~
 
+  // REST API parameter error check
   // if(!Object.keys(req.body).includes("idx") || !Object.keys(req.body).includes("userid")){
   if(!Object.keys(req.body).includes("userid")){
     error(res, "query error")
@@ -392,6 +417,7 @@ router.patch("/checkout", async (req, res, next) => {
   var userid = req.body.userid
   var resultMsg = await connSync(`select fb_key from reservation where userid="${userid}" and enable=1`)
 
+  // Database processing
   var result = await connSync(`update reservation set enable=2 where userid="${userid}" and enable=1`)
   if(!result) {
     error(res, "sql error")
@@ -410,15 +436,18 @@ router.patch("/checkout", async (req, res, next) => {
     sendFCMMsg(message)
   }
 
-
+  // Send result
   res.json({success: true})
 })
 
-// cancel
-router.patch("/cancel", async (req, res, next) => {
-  // uid = 사용자 아이디
-  // idx = 현재 예약 인덱스
 
+
+// Cancel reservation
+router.patch("/cancel", async (req, res, next) => {
+  // userid = user id
+  // idx = current reservation index
+
+  // REST API parameter error check
   if(!Object.keys(req.body).includes("idx") || !Object.keys(req.body).includes("userid")){
     error(res, "query error")
     return
@@ -435,19 +464,20 @@ router.patch("/cancel", async (req, res, next) => {
   }
   var userid = req.body.userid
 
+  // Database processing
   var result = await connSync(`update reservation set enable=2 where userid="${userid}" and idx=${idx}`)
   if(!result) {
     error(res, "sql error")
     return
   }
 
+  // Send result
   res.json({success: true})
 })
 
 
 
-
-// 예약 연장 기능 구현 X
+// Extend reservation (Not implemented)
 
 // // Test API for viewing MySQL table
 // router.get('/showtable', async (req, res, next) => {
@@ -474,6 +504,8 @@ router.patch("/cancel", async (req, res, next) => {
 //     success: true
 //   });
 // });
+
+
 
 // Initialize FB
 var serviceAccount = require("../keystore/gcse211-firebase-adminsdk.json");
@@ -508,25 +540,18 @@ admin.initializeApp({
 
 
 
-
-
-
-
-
-
 // node-cron
 // run in each minutes
 cron.schedule('* * * * *', async () => {
-  // - 입실하면 노티
-  //   - check in 에다가!
-
-  // - 예약시간 10분 전 noti
-  // - 예약시간 되면 입실 안내 noti
-  // - 예약 시간 후 10분 안에 입실 안하면 noti 보내고 자동취소
-  //   - Checkout: 10분 전, 시간 됬을 때, push 알림 및 테이블 드롭 기능 필요
-  //   - 시간 이미 지났는데 enable = 0인 경우 2로 변경
-  // - 퇴실 10분 전 noti
-  // - 끝나면 noti
+  // - Check in
+  //   - in check in feature
+  // - before 10 min to reserve noti
+  // - on-time to reserve noti
+  // - after 10 min to reserve: send noti and cancel reservation
+  //   - Checkout
+  //   - After reservation and enable = 0 -> 2
+  // - before 10 min to end to use noti
+  // - end to use noti
 
   var now = new Date();
   now.setHours(now.getHours()+9) // GMT+9
@@ -536,8 +561,8 @@ cron.schedule('* * * * *', async () => {
 
   await getAccessToken()
 
-  // 1. 예약시간 10분 전 noti
-  // 2. 예약시간 되면 입실 안내 noti
+  // 1.
+  // 2.
   var rows = await connSync(`select * from reservation where enable = 0`);
   
   for(var i of rows){
@@ -549,7 +574,7 @@ cron.schedule('* * * * *', async () => {
 
 
     if(now.valueOf() == targetBefore10.valueOf()){
-      // 1. 예약 10분 전
+      // 1.
       var message = {
         notification: {
           "title": "예약 10분 전입니다",
@@ -561,7 +586,7 @@ cron.schedule('* * * * *', async () => {
       sendFCMMsg(message)
     }
     if(now.valueOf() == target.valueOf()){
-      // 2. 예약 시간
+      // 2.
       var message = {
         notification: {
           "title": "예약 시간입니다",
@@ -574,9 +599,7 @@ cron.schedule('* * * * *', async () => {
     }
 
 
-    // 3. 예약 시간 후 10분 안에 입실 안하면 noti 보내고 자동취소
-    //   - Checkout: 10분 전, 시간 됬을 때, push 알림 및 테이블 드롭 기능 필요
-    //   - 시간 이미 지났는데 enable = 0인 경우 2로 변경
+    // 3.
     if(now.valueOf() >= targetAfter10.valueOf()){
       var message = {
         notification: {
@@ -593,8 +616,8 @@ cron.schedule('* * * * *', async () => {
   }
 
 
-  // 4. 퇴실 10분 전 noti
-  // 5. 끝나면 noti
+  // 4.
+  // 5.
   var rows = await connSync(`select * from reservation where enable = 1`);
   
   for(var i of rows){
@@ -604,7 +627,7 @@ cron.schedule('* * * * *', async () => {
     
 
     if(now.valueOf() == targetBefore10.valueOf()){
-      // 퇴실 10분 전
+      // Before 10 min to end to use
       var message = {
         notification: {
           "title": "예약 종료 10분 전입니다",
@@ -635,6 +658,7 @@ cron.schedule('* * * * *', async () => {
 
 
 
+// Error handler
 var error = (res, msg) => {
   res.statusCode = 400;
   res.json({

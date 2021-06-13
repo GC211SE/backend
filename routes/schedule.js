@@ -35,9 +35,9 @@ router.get('/buildings', async (req, res, next) => {
 // GET: /api/schedule/classrooms
 //  - query: {bd: "건물이름 ex> IT대학"}
 router.get('/classrooms', async (req, res, next) => {
-  // 모든 강의실 번호 response
+  // response all classroom name 
   // param
-  // bd = 빌딩이름
+  // bd = building name
 
   if(!Object.keys(req.query).includes("bd")){
     error(res, "query error")
@@ -60,8 +60,8 @@ router.get('/classrooms', async (req, res, next) => {
 //  - query: {bd: "건물이름 ex> IT대학", crn="강의실 번호 ex> 304"}
 router.get('/', async (req, res, next) => {
   // param
-  // bd = 빌딩이름
-  // crn = 강의실 번호
+  // bd = building name
+  // crn = classroom name
 
   if(!Object.keys(req.query).includes("bd") || !Object.keys(req.query).includes("crn")){
     error(res, "query error")
@@ -85,8 +85,7 @@ router.get('/', async (req, res, next) => {
 
 
 
-
-
+// SQL query executor (Promise)
 var connSync = (query) => new Promise(resolve => {
   conn.query(query, (err,rows) => {
     if(err){
@@ -97,6 +96,7 @@ var connSync = (query) => new Promise(resolve => {
   })
 })
 
+// Error handler
 var error = (res, msg) => {
   res.statusCode = 400;
   res.json({

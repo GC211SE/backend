@@ -7,17 +7,15 @@ var cors = require('cors')
 
 var mysql = require('mysql')
 const cipher = require('./cipher');
-const getTimetable = require('./getTimetable');
+// For adding timetable to database
+// const getTimetable = require('./getTimetable');
 
-
-// var indexRouter = require('./routes/index');
 var signRouter = require('./routes/sign');
 var reservationRouter = require('./routes/reservation');
 var scheduleRouter = require('./routes/schedule');
 
 
-
-
+// MySQL Connection
 global.conn = mysql.createConnection(
   {
     host: cipher.host,
@@ -28,6 +26,7 @@ global.conn = mysql.createConnection(
   }
 )
 
+// For adding timetable to database
 // global.updateTime = Date.now()
 
 conn.connect((err) => {
@@ -35,6 +34,7 @@ conn.connect((err) => {
   else console.log("MySQL Connection Successful!")
 });
 
+// For adding timetable to database
 // console.log("Start at: " + updateTime)
 
 var app = express();
@@ -47,12 +47,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// app.use('/', indexRouter);
 app.use('/api/sign', signRouter);
 app.use('/api/reservation', reservationRouter);
 app.use('/api/schedule', scheduleRouter);
 
-// Get timetable to MySQL database
+// For adding timetable to database
 // getTimetable().then(() => {
 //   console.log("Timetable all set!")
 // });
