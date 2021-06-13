@@ -17,12 +17,12 @@ router.get('/', async (req, res, next) => {
     return
   }
 
-  userId = req.query.id
-  userPw = req.query.pw
+  var userId = req.query.id
+  var userPw = req.query.pw
 
   var query = `?email=${userId}&password=${userPw}`
 
-  resHtml = await getHtml("https://wind.gachon.ac.kr/ko/process/member/login" + query)
+  var resHtml = await getHtml("https://wind.gachon.ac.kr/ko/process/member/login" + query)
   
   if(resHtml.length == 0){
     error(res,"login failed")
@@ -53,9 +53,11 @@ router.get('/', async (req, res, next) => {
 
 
 const getHtml = async (targetLink) => {
+  var res
+
   try{
     res = await axios.get(targetLink)
-    isSuccess = res.data["success"]
+    var isSuccess = res.data["success"]
 
     if(isSuccess){
       var setCookie = res.headers["set-cookie"][0].split(";")[0]

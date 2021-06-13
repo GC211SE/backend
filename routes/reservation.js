@@ -449,31 +449,31 @@ router.patch("/cancel", async (req, res, next) => {
 
 // 예약 연장 기능 구현 X
 
-// Test API for viewing MySQL table
-router.get('/showtable', async (req, res, next) => {
+// // Test API for viewing MySQL table
+// router.get('/showtable', async (req, res, next) => {
 
-  var result = await connSync(`select * from reservation`)
-  if(!result) {
-    error(res, "sql error")
-    return
-  }
+//   var result = await connSync(`select * from reservation`)
+//   if(!result) {
+//     error(res, "sql error")
+//     return
+//   }
 
-  res.json(result);
-});
+//   res.json(result);
+// });
 
-// Test API for testing Firebase Cloud Messaging
-router.post('/pushtest', function(req, res, next) {
+// // Test API for testing Firebase Cloud Messaging
+// router.post('/pushtest', function(req, res, next) {
 
-  console.log(req.body.appToken);
+//   console.log(req.body.appToken);
 
-  testset.push(req.body.appToken);
+//   testset.push(req.body.appToken);
 
-  console.log(testset)
+//   console.log(testset)
 
-  res.json({
-    success: true
-  });
-});
+//   res.json({
+//     success: true
+//   });
+// });
 
 // Initialize FB
 var serviceAccount = require("../keystore/gcse211-firebase-adminsdk.json");

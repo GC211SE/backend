@@ -32,15 +32,15 @@ var getTimetable = async () => {
   // console.log(data[0].prof_nm) //교수이름 
   // console.log(data[0].lec_time) // 강의시간 -> fk
 
-  // 0. 우선 21년 1학기만 우선 구현
-  // 1. 서버 시작 시 업데이트(글로벌, 메디컬 둘 다 진행) ~~하루(3600000ms) 지나면 시간표 업데이트 (글로벌, 메디컬 둘 다 진행)~~
-  //  1-1. DB 드랍
-  //  1-2. DB 추가 (source)
-  //  1-3. DB에 시간표 정보 추가
-  //   1-3-1. 정보 수신
-  //   1-3-2. lecture 추가 (subject_nm_kor, member_no, prof_nm)
-  //   1-3-3. let_room -> "," 파싱, trim -> "-" 파싱 후 lec_room ([글]로벌,[메]디컬 구분) 동일 값 없으면 추가 / lec_room_link 추가
-  //   1-3-4. lec_time -> "," 파싱, trim -> lec_time 에서 해당하는 idx 찾기 / lec_time_link 추가
+  // 0. Implement Spring semaster, 2021
+  // 1. Administrator run this update code (Global, Medical campus) ~~Update per day~~
+  //  1-1. DB drop
+  //  1-2. DB add (source)
+  //  1-3. Add timetable data into Database
+  //   1-3-1. Get timetable information (Json)
+  //   1-3-2. Add lecture table (subject_nm_kor, member_no, prof_nm)
+  //   1-3-3. let_room -> "," Parse, trim -> "-" Parse -> lec_room ([글]로벌,[메]디컬) insert if not duplicated / insert lec_room_link 
+  //   1-3-4. lec_time -> "," Parse, trim -> find idx in lec_time / insert lec_time_link
 
   // 1-1. / 1-2.
   // https://bleepcoder.com/ko/iosevka/33674462/how-to-use-sql-file-as-query-source
